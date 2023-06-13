@@ -24,7 +24,7 @@ def gcp_connection(file_key):
     except Exception:
         print(f"Não foi possível efetivar a conexão com o GCP.")
         print("--------------------------------------------------------------------------")
-    return client
+    return client,credentials
 
 def dataset_exist(client,dataset_name):
     ##########################################################################
@@ -49,83 +49,59 @@ def table_exist(client,dataset_fonte):
     #                    Cria as tabelas caso não existam                    #
     ##########################################################################
 
-    # Tabela e schema da tabela dim_indicador
-    table_indicador = dataset_fonte.table("dim_indicador")
-
-    schema_indicador = [
-        bigquery.SchemaField("sk_indicador", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("nm_indicador", "STRING"),
-        bigquery.SchemaField("de_indicador", "STRING")
-    ]
-
-    # Tabela e schema da tabela dim_equipe
-    table_equipe = dataset_fonte.table("dim_equipe")
-
-    schema_equipe = [
-        bigquery.SchemaField("sk_equipe", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("nm_equipe", "STRING"),
-        bigquery.SchemaField("de_equipe", "STRING")
-    ]
-
-    # Tabela e schema da tabela dim_localidade
-    table_localidade = dataset_fonte.table("dim_localidade")
-
-    schema_localidade = [
-        bigquery.SchemaField("sk_localidade", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("uf", "STRING"),
-        bigquery.SchemaField("municipio", "STRING")
-    ]
-
-    # Tabela e schema da tabela dim_periodo
-    table_periodo = dataset_fonte.table("dim_periodo")
-
-    schema_periodo = [
-        bigquery.SchemaField("sk_periodo", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("ano", "INTEGER"),
-        bigquery.SchemaField("quadrimestre", "INTEGER")
-    ]
-
     # Tabela e schema da tabela fato_sisab
-    table_fato_sisab = dataset_fonte.table("fato_sisab")
+    table_fato_mortalidade = dataset_fonte.table("fato_mortalidade")
 
-    schema_fato_sisab = [
-        bigquery.SchemaField("sk_indicador", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("sk_equipe", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("sk_periodo", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("sk_localidade", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("numerador", "INTEGER"),
-        bigquery.SchemaField("denominador_utilizado", "INTEGER"),
-        bigquery.SchemaField("percentual_quadrimestre", "INTEGER"),
-        bigquery.SchemaField("denominador_identificado", "INTEGER"),
-        bigquery.SchemaField("denominador_estimado", "INTEGER"),
-        bigquery.SchemaField("cadastro", "INTEGER"),
-        bigquery.SchemaField("base_externa", "FLOAT64"),
-        bigquery.SchemaField("percentual", "INTEGER"),
-        bigquery.SchemaField("populacao", "INTEGER")
+    schema_fato_mortalidade = [
+        bigquery.SchemaField("pk_base_origem", "INTEGER", mode="REQUIRED"),
+        bigquery.SchemaField("ano_arquivo", "INTEGER"),
+        bigquery.SchemaField("sexo", "STRING"),
+        bigquery.SchemaField("idade", "INTEGER"),
+        bigquery.SchemaField("dt_obito", "DATE"),
+        bigquery.SchemaField("dt_nascimento", "DATE"),
+        bigquery.SchemaField("local_ocorrencia", "STRING"),
+        bigquery.SchemaField("tp_obito", "STRING"),
+        bigquery.SchemaField("naturalidade", "STRING"),
+        bigquery.SchemaField("municipio_residencia", "INTEGER"),
+        bigquery.SchemaField("municipio_ocorrencia", "INTEGER"),
+        bigquery.SchemaField("causa_basica", "STRING")
     ]
-
-    tabelas = {
-        table_indicador:schema_indicador,
-        table_equipe:schema_equipe,
-        table_localidade:schema_localidade,
-        table_periodo:schema_periodo,
-        table_fato_sisab:schema_fato_sisab
-    }
 
     print("--------------------------------------------------------------------------")
     print("Verificando a existência das tabelas no GCP...")
-    for tabela, schema in tabelas.items():
-        try:
-            client.get_table(tabela, timeout=30)
-            print(f"A tabela {tabela} já existe!")
-            print("--------------------------------------------------------------------------")
-        except:
-            print(f"Tabela {tabela} não encontrada! Criando tabela {tabela}...")
-            client.create_table(bigquery.Table(tabela, schema=schema))
-            print(f"A tabela {tabela} foi criada.")
-            print("--------------------------------------------------------------------------")
+    try:
+        client.get_table(table_fato_mortalidade, timeout=30)
+        print(f"A tabela {table_fato_mortalidade} já existe!")
+        print("--------------------------------------------------------------------------")
+    except:
+        print(f"Tabela {table_fato_mortalidade} não encontrada! Criando tabela {table_fato_mortalidade}...")
+        client.create_table(bigquery.Table(table_fato_mortalidade, schema=schema_fato_mortalidade))
+        print(f"A tabela {table_fato_mortalidade} foi criada.")
+        print("--------------------------------------------------------------------------")
 
-    return table_indicador, table_equipe, table_localidade, table_periodo, table_fato_sisab
+    return table_fato_mortalidade
+
+def update_date(client,credentials,dataset_fonte,table_fato_mortalidade):
+    ##########################################################################
+    #         Verifica a data de atualização para baixar os arquivos         #
+    ##########################################################################
+    # Construir a query
+    query = f"""
+        SELECT MAX(ano_arquivo) AS nu_ano
+        FROM `{credentials.project_id}.{dataset_fonte.dataset_id}.{table_fato_mortalidade.table_id}`
+    """
+    # Executar a query
+    query_job = client.query(query)
+    # Obter os resultados
+    results = query_job.result()        
+    # Iterar sobre os resultados
+    for row in results:
+        if row["nu_ano"] != None:
+            proximo_ano = int(row["nu_ano"])
+        else:
+            proximo_ano = 1979
+    print(f"Próximo ano à carregar é: {proximo_ano}")
+    return proximo_ano
 
 def load_data(tables_dfs,client,dataset_fonte):
     print("--------------------------------------------------------------------------")
