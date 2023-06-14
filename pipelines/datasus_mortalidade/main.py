@@ -1,7 +1,7 @@
 # importar de outro arquivo
 from load import *
 from extract import *
-# from transform import *
+from transform import *
 
 ##########################################################################
 #                            Definir variáveis                           #
@@ -21,25 +21,31 @@ dataset_fonte = dataset_exist(client,dataset_name)
 table_fato_mortalidade = table_exist(client,dataset_fonte)
 
 ##########################################################################
-#                             Extrair dados                              #
+#                              Executar ETL                              #
 ##########################################################################
-# Verificar próximo ano e mês a baixar dados
-proximo_ano = update_date(client,credentials,dataset_fonte,table_fato_mortalidade)
-# Baixar arquivos
-download_files(proximo_ano,data_folder)
-'''
-##########################################################################
-#                         Executar transformações                        #
-##########################################################################
-# Ler todos os arquivos, tratar e agrupar em um único dataframe
-df_group = group_files(data_folder)
-# Criar dfs da fato e das dimensões
-fato_mortalidade = create_dfs(df_group)
+while True:
 
-##########################################################################
-#                          Carregar dados no GCP                         #
-##########################################################################
-# Incluir tabelas e dfs em uma biblioteca
-tables_dfs = {table_fato_mortalidade:fato_mortalidade} 
-load_data(tables_dfs,client,dataset_fonte)
-'''
+    ##########################################################################
+    #                             Extrair dados                              #
+    ##########################################################################
+    # Verificar próximo ano a baixar dados
+    proximo_ano = update_date(client,credentials,dataset_fonte,table_fato_mortalidade)
+    # Baixar arquivos
+    atualizar = download_files(proximo_ano,data_folder)
+    if atualizar == False:
+        break
+
+    ##########################################################################
+    #                         Executar transformações                        #
+    ##########################################################################
+    # Ler todos os arquivos, tratar e agrupar em um único dataframe
+    df_group = group_files(data_folder)
+    # Criar dfs da fato e das dimensões
+    fato_mortalidade = create_dfs(df_group)
+
+    ##########################################################################
+    #                          Carregar dados no GCP                         #
+    ##########################################################################
+    # Incluir tabelas e dfs em uma biblioteca
+    tables_dfs = {table_fato_mortalidade:fato_mortalidade} 
+    load_data(tables_dfs,client,dataset_fonte)
