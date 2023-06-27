@@ -1,11 +1,11 @@
 # importar de outro arquivo
-from sisab_gcp import *
-from sisab_tran import *
+from load import *
+from transform import *
 
 ##########################################################################
 #                            Definir variáveis                           #
 ##########################################################################
-file_key = "keys\ml-na-saude-ed1fc3c1a83e.json"
+file_key = "..\..\keys\ml-na-saude-ed1fc3c1a83e.json"
 dataset_name = "indicadores_sisab"
 data_folder = "dados"
 

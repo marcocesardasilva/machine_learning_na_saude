@@ -8,8 +8,7 @@ def download_files(proximo_ano,data_folder):
     if not os.path.exists(data_folder):
         os.makedirs(data_folder)
 
-    # Declaração das variáveis próximo ano e próximo mês
-    proximo_ano = proximo_ano
+    # Declaração da variável ano_baixar
     ano_baixar = str(proximo_ano).zfill(4)
 
     print('-------------------------------------------------')
@@ -17,35 +16,30 @@ def download_files(proximo_ano,data_folder):
     print('-------------------------------------------------')
 
     # Definir link e arquivo
-    if proximo_ano <= 2020:
-        file = f'Mortalidade_Geral_{ano_baixar}.csv'
-        link = f'https://diaad.s3.sa-east-1.amazonaws.com/sim/{file}'
-    elif proximo_ano == 2021:
-        file = f'Mortalidade_Geral_{ano_baixar}.csv'
-        link = f'https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SIM/{file}'
-    else:
-        ano_abreviado = ano_baixar[-2:]
-        file = f'DO{ano_abreviado}OPEN.csv'
-        link = f'https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SIM/{file}'
+    file = f'Mortalidade_Geral_{ano_baixar}.csv'
+    link = f'https://diaad.s3.sa-east-1.amazonaws.com/sim/{file}'
 
     # Verifica se o arquivo foi baixado
     if(os.path.exists(f'{data_folder}/{file}')):
         print(f'Arquivo {file} já foi baixado baixado')
-        atualizar = True
     else:
-    # Tenta baixar o primeiro arquivo
+    # Tenta baixar o arquivo
         try:
             print(f'Baixando o arquivo {file}')
             request.urlretrieve(f'{link}', f'{data_folder}/{file}')
             # Verifica se o arquivo foi baixado
             if(os.path.exists(f'{data_folder}/{file}')):
                 print(f'Arquivo {file} baixado')
-                atualizar = True
+            else:
+                print('-------------------------------------------------------')
+                print('Não foi possível baixar o arquivo. Execução finalizada!')
+                print('-------------------------------------------------------')
+                file = None
         except:
             print(f'Arquivos de {ano_baixar} ainda não disponibilizado')
             print('-------------------------------------------------')
             print('Todos os arquivos disponíveis foram baixados!')
             print('-------------------------------------------------')
-            atualizar = False
+            file = None
 
-    return atualizar
+    return file
