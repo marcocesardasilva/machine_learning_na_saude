@@ -24,7 +24,7 @@ def gcp_connection(file_key):
     except Exception:
         print(f"Não foi possível efetivar a conexão com o GCP.")
         print("--------------------------------------------------------------------------")
-    return client,credentials
+    return client
 
 def dataset_exist(client,dataset_name):
     ##########################################################################
@@ -53,14 +53,13 @@ def table_exist(client,dataset_fonte):
     table_mortalidade = dataset_fonte.table("mortalidade")
 
     schema_mortalidade = [
-        bigquery.SchemaField("pk_base_origem", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("ano_arquivo", "STRING"),
+        bigquery.SchemaField("ano_obito", "STRING"),
+        bigquery.SchemaField("quad_obito", "STRING"),
         bigquery.SchemaField("dt_obito", "DATE"),
-        bigquery.SchemaField("dt_nascimento", "DATE"),
+        bigquery.SchemaField("dt_nasc", "DATE"),
         bigquery.SchemaField("idade", "INTEGER"),
-        bigquery.SchemaField("tp_obito", "STRING"),
-        bigquery.SchemaField("cd_municipio_residencia", "STRING"),
-        bigquery.SchemaField("cid10", "STRING")
+        bigquery.SchemaField("cid10", "STRING"),
+        bigquery.SchemaField("cd_mun_res", "STRING")
     ]
 
     print("--------------------------------------------------------------------------")
@@ -77,45 +76,17 @@ def table_exist(client,dataset_fonte):
 
     return table_mortalidade
 
-def update_date(client,credentials,dataset_fonte,table_mortalidade):
-    ##########################################################################
-    #         Verifica a data de atualização para baixar os arquivos         #
-    ##########################################################################
-    # Construir a query
-    query = f"""
-        SELECT MAX(ano_arquivo) AS nu_ano
-        FROM `{credentials.project_id}.{dataset_fonte.dataset_id}.{table_mortalidade.table_id}`
-    """
-    # Executar a query
-    query_job = client.query(query)
-    # Obter os resultados
-    results = query_job.result()        
-    # Iterar sobre os resultados
-    for row in results:
-        if row["nu_ano"] != None:
-            proximo_ano = int(row["nu_ano"]) + 1
-        else:
-            proximo_ano = 2010
-    if proximo_ano >= 2020:
-        proximo_ano = False
-        print('-------------------------------------------------')
-        print('Todos os arquivos necessários já foram baixados!')
-        print('-------------------------------------------------')
-    else:
-        print(f"Próximo ano à carregar é: {proximo_ano}")
-    return proximo_ano
-
 def load_data(tables_dfs,client,dataset_fonte):
     print("--------------------------------------------------------------------------")
     print("Carregando dados no GCP...")
     for tabela, df in tables_dfs.items():
         table_ref = client.dataset(dataset_fonte.dataset_id).table(tabela.table_id)
         job_config = bigquery.LoadJobConfig()
-        job_config.write_disposition = bigquery.WriteDisposition.WRITE_APPEND
+        job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
         job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
         job.result()
         print(f"Dados carregados na tabela {tabela}.")
-    
+
     print("--------------------------------------------------------------------------")
     print("##########################################################################")
     print("#                         Dados carregados no GCP                        #")
