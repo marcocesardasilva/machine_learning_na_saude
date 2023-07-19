@@ -93,11 +93,11 @@ def update_date(client,credentials,dataset_fonte,table_mortalidade):
     # Iterar sobre os resultados
     for row in results:
         if row["nu_ano"] != None:
-            proximo_ano = int(row["nu_ano"])
+            proximo_ano = int(row["nu_ano"]) + 1
         else:
             proximo_ano = 2010
     if proximo_ano >= 2020:
-        proximo_ano = None
+        proximo_ano = False
         print('-------------------------------------------------')
         print('Todos os arquivos necessários já foram baixados!')
         print('-------------------------------------------------')

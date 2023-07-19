@@ -30,7 +30,7 @@ while True:
     ##########################################################################
     # Verificar próximo ano a baixar dados
     proximo_ano = update_date(client,credentials,dataset_fonte,table_mortalidade)
-    if proximo_ano == None:
+    if not proximo_ano:
         break
     # Baixar arquivos
     file = download_files(proximo_ano,data_folder)
