@@ -49,32 +49,34 @@ def table_exist(client,dataset_fonte):
     #                    Cria as tabelas caso não existam                    #
     ##########################################################################
 
-    # Tabela e schema da table_mortalidade
-    table_mortalidade = dataset_fonte.table("mortalidade")
+    # Tabela e schema da table_yll
+    table_yll = dataset_fonte.table("yll_por_obito")
 
-    schema_mortalidade = [
-        bigquery.SchemaField("ano_obito", "STRING"),
-        bigquery.SchemaField("quad_obito", "STRING"),
-        bigquery.SchemaField("dt_obito", "DATE"),
-        bigquery.SchemaField("dt_nasc", "DATE"),
-        bigquery.SchemaField("idade", "INTEGER"),
-        bigquery.SchemaField("cid10", "STRING"),
-        bigquery.SchemaField("cd_mun_res", "STRING")
+    schema_yll = [
+        bigquery.SchemaField("ano_obito", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("quad_obito", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("dt_obito", "DATE", mode="REQUIRED"),
+        bigquery.SchemaField("dt_nasc", "DATE", mode="REQUIRED"),
+        bigquery.SchemaField("idade", "FLOAT", mode="REQUIRED"),
+        bigquery.SchemaField("yll", "FLOAT", mode="REQUIRED"),
+        bigquery.SchemaField("cid10", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("cd_mun_res", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("populacao", "INTEGER", mode="REQUIRED")
     ]
 
     print("--------------------------------------------------------------------------")
     print("Verificando a existência das tabelas no GCP...")
     try:
-        client.get_table(table_mortalidade, timeout=30)
-        print(f"A tabela {table_mortalidade} já existe!")
+        client.get_table(table_yll, timeout=30)
+        print(f"A tabela {table_yll} já existe!")
         print("--------------------------------------------------------------------------")
     except:
-        print(f"Tabela {table_mortalidade} não encontrada! Criando tabela {table_mortalidade}...")
-        client.create_table(bigquery.Table(table_mortalidade, schema=schema_mortalidade))
-        print(f"A tabela {table_mortalidade} foi criada.")
+        print(f"Tabela {table_yll} não encontrada! Criando tabela {table_yll}...")
+        client.create_table(bigquery.Table(table_yll, schema=schema_yll))
+        print(f"A tabela {table_yll} foi criada.")
         print("--------------------------------------------------------------------------")
 
-    return table_mortalidade
+    return table_yll
 
 def load_data(tables_dfs,client,dataset_fonte):
     print("--------------------------------------------------------------------------")

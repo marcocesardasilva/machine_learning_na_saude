@@ -1,7 +1,7 @@
 # importar bibliotecas
 import os
 import pandas as pd
-from dateutil.relativedelta import relativedelta
+import basedosdados as bd
 
 
 def create_df(data_folder):
@@ -26,41 +26,96 @@ def create_df(data_folder):
             "E142","E143","E144","E145","E146","E147","E148","E109","E119","E129","E139","E149","G40","G41","N10","N11","N12","N30","N34","N390",
             "A46","L01","L02","L03","L04","L08","N70","N71","N72","N73","N75","N76","K25","K26","K27","K28","K920","K921","K922","O23","A50","P350"]
 
+    # Função para calcular a expectativa de vida
+    def calcular_expectativa_de_vida(idade):
+        if idade < 0.08:
+            return 89.99
+        elif 0.08 <= idade < 1:
+            return 89.55
+        elif 1 <= idade < 5:
+            return 89.07
+        elif 5 <= idade < 10:
+            return 82.58
+        elif 10 <= idade < 15:
+            return 77.58
+        elif 15 <= idade < 20:
+            return 72.60
+        elif 20 <= idade < 25:
+            return 67.62
+        elif 25 <= idade < 30:
+            return 62.66
+        elif 30 <= idade < 35:
+            return 57.71
+        elif 35 <= idade < 40:
+            return 52.76
+        elif 40 <= idade < 45:
+            return 47.83
+        elif 45 <= idade < 50:
+            return 42.94
+        elif 50 <= idade < 55:
+            return 38.10
+        elif 55 <= idade < 60:
+            return 33.33
+        elif 60 <= idade < 65:
+            return 28.66
+        elif 65 <= idade < 70:
+            return 24.12
+        elif 70 <= idade < 75:
+            return 19.76
+        elif 75 <= idade < 80:
+            return 15.65
+        elif 80 <= idade < 85:
+            return 11.69
+        else:
+            return 7.05
+
+    # Função para gerar o dataframe
     for arquivo in os.listdir(file_path):
         if arquivo.endswith('.csv'):
             # Ler o arquivo CSV com o pandas
             df = pd.read_csv(os.path.join(file_path, arquivo), delimiter=';', encoding='ISO-8859-1', low_memory=False)
-            # Função lambda para analisar se é ou não icsaps
+            # Analisar se é ou não icsaps
             df['icsaps'] = df['CAUSABAS'].apply(lambda x: 'Sim' if x in COD_ICSAPS else 'Não')
             # Manter apenas dados que são icsaps
             df = df[df['icsaps'] == 'Sim']
             # Realizar transformação das datas de nascimento e óbito
-            df['DTOBITO'] = pd.to_datetime(df['DTOBITO'], format='%d%m%Y', errors='coerce')
-            df['DTNASC'] = pd.to_datetime(df['DTNASC'], format='%d%m%Y', errors='coerce')
+            df['dt_obito'] = pd.to_datetime(df['DTOBITO'], format='%d%m%Y', errors='coerce')
+            df['dt_nasc'] = pd.to_datetime(df['DTNASC'], format='%d%m%Y', errors='coerce')
             # Excluir dados nulos para data de nascimento e de óbito
-            df = df.dropna(subset=['DTNASC'])
-            df = df.dropna(subset=['DTOBITO'])
+            df = df.dropna(subset=['dt_nasc'])
+            df = df.dropna(subset=['dt_obito'])
             # Criar a coluna idade
-            df['idade'] = df.apply(lambda row: relativedelta(row['DTOBITO'], row['DTNASC']).years, axis=1)
-            # Criando a coluna 'ano_obito'
-            df['ano_obito'] = df['DTOBITO'].dt.year.astype(float).astype(pd.Int64Dtype()).astype(str).where(df['DTOBITO'].notna())
-            # Criando a coluna 'quadrimestre_obito' usando pd.cut()
-            df['quad_obito'] = pd.cut(df['DTOBITO'].dt.month, bins=[1, 5, 9, 13], labels=[1, 2, 3], right=False)
+            df['idade'] = ((df['dt_obito'] - df['dt_nasc']).dt.days / 365.25).round(2)
+            # Manter apenas dados com idades válidas
+            df = df[df['idade'] >= 0]
+            # Criar coluna expectativa de vida e yll
+            df['yll'] = df.apply(lambda row: calcular_expectativa_de_vida(row['idade']), axis=1)
+            # Criar as colunas ano_obito e quadrimestre_obito
+            df['ano_obito'] = df['dt_obito'].dt.year.astype(float).astype(pd.Int64Dtype()).astype(str).where(df['dt_obito'].notna())
+            df['quad_obito'] = pd.cut(df['dt_obito'].dt.month, bins=[1, 5, 9, 13], labels=[1, 2, 3], right=False)
             # Extrair os 6 primeiros dígitos da coluna CODMUNRES
-            df['CODMUNRES'] = df['CODMUNRES'].astype(str).str.slice(stop=6)
+            df['cd_mun_res'] = df['CODMUNRES'].astype(str).str.slice(stop=6)
             # Renomear colunas
-            df = df.rename(columns={
-                'DTOBITO': 'dt_obito',
-                'DTNASC':'dt_nasc',
-                'CAUSABAS':'cid10',
-                'CODMUNRES':'cd_mun_res'
-                })
+            df = df.rename(columns={'CAUSABAS':'cid10'})
             # Selecionar coluna desejadas
-            df = df[["ano_obito","quad_obito","dt_obito","dt_nasc","idade","cid10","cd_mun_res"]]
+            df = df[['ano_obito','quad_obito','dt_obito','dt_nasc','idade','yll','cid10','cd_mun_res']]
             # adiciona o dataframe à lista de dataframes
             dfs.append(df)
-    # concatena os dataframes em um único dataframe final
-    df_mortalidade = pd.concat(dfs, ignore_index=True)
 
-    return df_mortalidade
+    # concatena os dataframes em um único dataframe final
+    df_group = pd.concat(dfs, ignore_index=True)
+    # Baixa a base de população por município
+    df_download = bd.read_table(dataset_id='br_ms_populacao',table_id='municipio',billing_project_id="ml-na-saude")
+    # Agrupa apenas as colunas desejadas
+    df_populacao = df_download.groupby(['ano', 'id_municipio'])['populacao'].sum().reset_index()
+    # Transformar id_municipio para apenas 6 digitos
+    df_populacao['id_municipio'] = df_populacao['id_municipio'].astype(str).str[:6]
+    # Alterar tipo de dados do ano
+    df_populacao['ano'] = df_populacao['ano'].astype(str)
+    # Merge os dataframes com base nas condições especificadas
+    df_yll = df_group.merge(df_populacao, how='left', left_on=['ano_obito', 'cd_mun_res'], right_on=['ano', 'id_municipio'])
+    # Drop das colunas desnecessárias após a junção
+    df_yll.drop(['ano', 'id_municipio'], axis=1, inplace=True)
+
+    return df_yll
 
