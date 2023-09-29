@@ -1,8 +1,6 @@
 # importar bibliotecas
 import os
 import pandas as pd
-import basedosdados as bd
-
 
 def create_df(data_folder):
     current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -44,17 +42,15 @@ def create_df(data_folder):
     # concatena os dataframes em um único dataframe final
     df_group = pd.concat(dfs, ignore_index=True)
     # Baixa a base de população por município
-    df_download = bd.read_table(dataset_id='br_ms_populacao',table_id='municipio',billing_project_id="ml-na-saude")
-    # Agrupa apenas as colunas desejadas
-    df_populacao = df_download.groupby(['ano', 'id_municipio'])['populacao'].sum().reset_index()
+    df_populacao = pd.read_csv("pipelines\mortalidade_infantil\dados\populacao.csv")
     # Transformar id_municipio para apenas 6 digitos
     df_populacao['id_municipio'] = df_populacao['id_municipio'].astype(str).str[:6]
     # Alterar tipo de dados do ano
     df_populacao['ano'] = df_populacao['ano'].astype(str)
     # Merge os dataframes com base nas condições especificadas
-    df_yll = df_group.merge(df_populacao, how='left', left_on=['ano_obito', 'cd_mun_res'], right_on=['ano', 'id_municipio'])
+    df_mortalidade_infantil = df_group.merge(df_populacao, how='left', left_on=['ano_obito', 'cd_mun_res'], right_on=['ano', 'id_municipio'])
     # Drop das colunas desnecessárias após a junção
-    df_yll.drop(['ano', 'id_municipio'], axis=1, inplace=True)
+    df_mortalidade_infantil.drop(['ano', 'id_municipio'], axis=1, inplace=True)
 
-    return df_yll
+    return df_mortalidade_infantil
 
