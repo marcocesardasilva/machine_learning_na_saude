@@ -46,11 +46,17 @@ def create_df(data_folder):
     # Transformar id_municipio para apenas 6 digitos
     df_populacao['id_municipio'] = df_populacao['id_municipio'].astype(str).str[:6]
     # Alterar tipo de dados do ano
-    df_populacao['ano'] = df_populacao['ano'].astype(str)
+    df_populacao['data'] = pd.to_datetime(df_populacao.ano, format='%Y', errors='coerce')
+    #Adicionar Coluna Para os quadrimestres
+    df_populacao['quad'] = pd.cut(df_populacao['data'].dt.month, bins=[1, 5, 9, 13], labels=[1, 2, 3], right=False)
+    df_populacao['ano'] = df_populacao['data'].dt.strftime('%Y')
+    df_populacao['quad'] = df_populacao['quad'].astype('int')
     # Merge os dataframes com base nas condições especificadas
-    df_mortalidade_infantil = df_group.merge(df_populacao, how='left', left_on=['ano_obito', 'cd_mun_res'], right_on=['ano', 'id_municipio'])
+    df_populacao.rename(columns={"id_municipio": "cd_mun_res"}, inplace=True)
+    df_group.rename(columns={"ano_obito": "ano", "quad_obito": "quad"}, inplace=True)
+    df_mortalidade_infantil = df_group.merge(df_populacao[['cd_mun_res', 'ano', 'quad', 'populacao']], on=['ano', 'quad', 'cd_mun_res'],how='left')
     # Drop das colunas desnecessárias após a junção
-    df_mortalidade_infantil.drop(['ano', 'id_municipio'], axis=1, inplace=True)
+    #df_mortalidade_infantil.drop(['ano', 'id_municipio'], axis=1, inplace=True)
 
     return df_mortalidade_infantil
 
