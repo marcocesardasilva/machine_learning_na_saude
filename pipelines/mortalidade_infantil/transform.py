@@ -5,6 +5,7 @@ import pandas as pd
 def create_df(data_folder):
     current_directory = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_directory, data_folder)
+    population_path = r'C:\Users\Carla\Documents\GitHub\machine_learning_na_saude\pipelines\mortalidade_infantil\populacao.csv'
 
     print("--------------------------------------------------------------------------")
     print("Carregando os dados dos arquivos extraídos, tratando e concatenando...")
@@ -42,7 +43,7 @@ def create_df(data_folder):
     # concatena os dataframes em um único dataframe final
     df_group = pd.concat(dfs, ignore_index=True)
     # Baixa a base de população por município
-    df_populacao = pd.read_csv("pipelines\mortalidade_infantil\dados\populacao.csv")
+    df_populacao = pd.read_csv(population_path,  parse_dates=[0])
     # Transformar id_municipio para apenas 6 digitos
     df_populacao['id_municipio'] = df_populacao['id_municipio'].astype(str).str[:6]
     # Alterar tipo de dados do ano
@@ -51,12 +52,14 @@ def create_df(data_folder):
     df_populacao['quad'] = pd.cut(df_populacao['data'].dt.month, bins=[1, 5, 9, 13], labels=[1, 2, 3], right=False)
     df_populacao['ano'] = df_populacao['data'].dt.strftime('%Y')
     df_populacao['quad'] = df_populacao['quad'].astype('int')
-    # Merge os dataframes com base nas condições especificadas
     df_populacao.rename(columns={"id_municipio": "cd_mun_res"}, inplace=True)
     df_group.rename(columns={"ano_obito": "ano", "quad_obito": "quad"}, inplace=True)
-    df_mortalidade_infantil = df_group.merge(df_populacao[['cd_mun_res', 'ano', 'quad', 'populacao']], on=['ano', 'quad', 'cd_mun_res'],how='left')
-    # Drop das colunas desnecessárias após a junção
-    #df_mortalidade_infantil.drop(['ano', 'id_municipio'], axis=1, inplace=True)
+    df_mortalidade_infantil = df_group.merge(df_populacao[['cd_mun_res', 'ano', 'quad', 'populacao']],on=['ano', 'quad', 'cd_mun_res'], how='left')
+    df_mortalidade_infantil.drop(['ano'], axis=1, inplace=True)
+    # Merge os dataframes com base nas condições especificadas
+    df_mortalidade_infantil.info()
+    df_mortalidade_infantil.head()
+    df_mortalidade_infantil.to_csv('mortalidade.csv', sep=',', index=True, encoding='utf-8')
 
     return df_mortalidade_infantil
 
