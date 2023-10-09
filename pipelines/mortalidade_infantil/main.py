@@ -36,5 +36,5 @@ df_mortalidade.head()
 #                          Carregar dados no GCP                         #
 ##########################################################################
 # Incluir tabelas e dfs em uma biblioteca
-#tables_dfs = {table_mortalidade:df_mortalidade}
-#load_data(tables_dfs,client,dataset_fonte)
+tables_dfs = {table_mortalidade:df_mortalidade}
+load_data(tables_dfs,client,dataset_fonte)

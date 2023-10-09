@@ -24,12 +24,12 @@ def create_df(data_folder):
             # Excluir dados nulos para data de nascimento e de óbito
             df = df.dropna(subset=['dt_nasc'])
             df = df.dropna(subset=['dt_obito'])
-            # Criar a coluna idade
-            df['idade'] = ((df['dt_obito'] - df['dt_nasc']).dt.days / 365.25).round(2)
+            # Criar a coluna idade em dias
+            df['idade'] = ((df['dt_obito'] - df['dt_nasc']).dt.days)
             # Manter apenas dados com idades válidas
             df = df[df['idade'] >= 0]
             # Manter apenas dados de Menores de 5 anos
-            df = df[df['idade'] <= 5]
+            df = df[df['idade'] <= 28]
             # Criar as colunas ano_obito e quadrimestre_obito
             df['ano_obito'] = df['dt_obito'].dt.year.astype(float).astype(pd.Int64Dtype()).astype(str).where(df['dt_obito'].notna())
             df['quad_obito'] = pd.cut(df['dt_obito'].dt.month, bins=[1, 5, 9, 13], labels=[1, 2, 3], right=False)
