@@ -54,12 +54,11 @@ def create_df(data_folder):
     df_populacao['quad'] = df_populacao['quad'].astype('int')
     df_populacao.rename(columns={"id_municipio": "cd_mun_res"}, inplace=True)
     df_group.rename(columns={"ano_obito": "ano", "quad_obito": "quad"}, inplace=True)
+    # Merge os dataframes com base nas condições especificadas
     df_mortalidade_infantil = df_group.merge(df_populacao[['cd_mun_res', 'ano', 'quad', 'populacao']],on=['ano', 'quad', 'cd_mun_res'], how='left')
     df_mortalidade_infantil.drop(['ano'], axis=1, inplace=True)
-    # Merge os dataframes com base nas condições especificadas
+    #df_mortalidade_infantil['ano_obito'] = df_mortalidade_infantil['dt_obito'].dt.year.astype(float).astype(pd.Int64Dtype()).astype(str).where(df_mortalidade_infantil['dt_obito'].notna())
     df_mortalidade_infantil.info()
-    df_mortalidade_infantil.head()
-    df_mortalidade_infantil.to_csv('mortalidade.csv', sep=',', index=True, encoding='utf-8')
 
     return df_mortalidade_infantil
 

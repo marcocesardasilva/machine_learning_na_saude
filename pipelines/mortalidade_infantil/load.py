@@ -53,6 +53,7 @@ def table_exist(client,dataset_fonte):
     table_mortalidade = dataset_fonte.table("mortalidade_infantil")
 
     schema_mortalidade = [
+        bigquery.SchemaField("ano_obito", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("quad", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("dt_obito", "DATE", mode="REQUIRED"),
         bigquery.SchemaField("dt_nasc", "DATE", mode="REQUIRED"),
