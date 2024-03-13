@@ -6,9 +6,9 @@ from transform import *
 ##########################################################################
 #                            Definir variáveis                           #
 ##########################################################################
-file_key = "..\..\keys\ml-na-saude-ed1fc3c1a83e.json"
+file_key = r"C:\Users\User\Documents\GitHub\machine_learning_na_saude\keys\ml-na-saude-ed1fc3c1a83e.json"
 dataset_name = "mortalidade_infantil"
-data_folder = "dados"
+data_folder = r"C:\Users\User\Documents\GitHub\machine_learning_na_saude\pipelines\mortalidade_infantil\dados"
 
 ##########################################################################
 #               Criar conexão com o GCP, dataset e tabelas               #

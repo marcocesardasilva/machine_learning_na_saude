@@ -9,7 +9,7 @@ def download_files(data_folder):
         os.makedirs(data_folder)
 
     # baixar os arquivos dos anos desejados
-    for ano in range(2010, 2020):
+    for ano in range(2010, 2022):
         ano_baixar = str(ano)
 
         print('-------------------------------------------------')

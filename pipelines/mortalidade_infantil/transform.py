@@ -5,7 +5,7 @@ import pandas as pd
 def create_df(data_folder):
     current_directory = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_directory, data_folder)
-    population_path = r'C:\Users\Carla\Documents\GitHub\machine_learning_na_saude\pipelines\mortalidade_infantil\populacao.csv'
+    population_path = r'C:\Users\User\Documents\GitHub\machine_learning_na_saude\pipelines\mortalidade_infantil\populacao.csv'
 
     print("--------------------------------------------------------------------------")
     print("Carregando os dados dos arquivos extraídos, tratando e concatenando...")
